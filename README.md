@@ -15,6 +15,10 @@ LSTM(128) over (28) rows --> 10 output + softmax
 
 0.9852 accuracy after 19 epochs (128 batch size, adam)
 
+Bidirectional version:
+
+0.9851 accuracy after 15 epochs
+
 #### Hierarchical LSTM 
 
 ```

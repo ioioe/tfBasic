@@ -1,5 +1,5 @@
 '''
-My re-implementation of Tensorflow's row-based LSTM model
+My re-implementation of block-based LSTM model
 '''
 
 from keras.datasets import mnist
@@ -17,7 +17,9 @@ batch_size = 128
 nb_classes = 10
 nb_epochs = 200
 hidden_units = 128
-n_input = 28
+n_block_h = 4
+n_block_w = 7
+n_input = n_block_h * n_block_w
 n_steps = 28
 
 learning_rate = 1e-3
