@@ -1,39 +1,32 @@
-'''This is a reproduction of the IRNN experiment
-with pixel-by-pixel sequential MNIST in
-"A Simple Way to Initialize Recurrent Networks of Rectified Linear Units"
-by Quoc V. Le, Navdeep Jaitly, Geoffrey E. Hinton
-arXiv:1504.00941v2 [cs.NE] 7 Apr 2015
-http://arxiv.org/pdf/1504.00941v2.pdf
-Optimizer is replaced with RMSprop which yields more stable and steady
-improvement.
-Reaches 0.93 train/test accuracy after 900 epochs
-(which roughly corresponds to 1687500 steps in the original paper.)
+'''
+My re-implementation of Tensorflow's row-based LSTM model
 '''
 
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Activation
-from keras.layers import SimpleRNN
+from keras.layers import LSTM
 from keras.initializations import normal, identity
-from keras.optimizers import RMSprop
+from keras.optimizers import RMSprop, Adam
 from keras.utils import np_utils
 from setGPU import set_gpu_memory_keras
 
 set_gpu_memory_keras(0.4)
 
-batch_size = 32
+batch_size = 128
 nb_classes = 10
 nb_epochs = 200
-hidden_units = 100
+hidden_units = 128
+n_input = 28
+n_steps = 28
 
-learning_rate = 1e-6
-clip_norm = 1.0
+learning_rate = 1e-3
 
 # the data, shuffled and split between train and test sets
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
-X_train = X_train.reshape(X_train.shape[0], -1, 1)
-X_test = X_test.reshape(X_test.shape[0], -1, 1)
+X_train = X_train.reshape(X_train.shape[0], n_steps, n_input)
+X_test = X_test.reshape(X_test.shape[0], n_steps, n_input)
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
 X_train /= 255
@@ -46,18 +39,19 @@ print(X_test.shape[0], 'test samples')
 Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
-print('Evaluate IRNN...')
+print('Evaluate row-based LSTM...')
 model = Sequential()
-model.add(SimpleRNN(output_dim=hidden_units,
-                    init=lambda shape, name: normal(shape, scale=0.001, name=name),
-                    inner_init=lambda shape, name: identity(shape, scale=1.0, name=name),
-                    activation='relu',
-                    input_shape=X_train.shape[1:]))
+
+model.add(LSTM(output_dim=hidden_units,
+               activation='tanh',
+               input_shape=(n_steps, n_input)))
+
 model.add(Dense(nb_classes))
 model.add(Activation('softmax'))
-rmsprop = RMSprop(lr=learning_rate)
+# rmsprop = RMSprop(lr=learning_rate)
+adam = Adam(lr=learning_rate)
 model.compile(loss='categorical_crossentropy',
-              optimizer=rmsprop,
+              optimizer=adam,
               metrics=['accuracy'])
 
 model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epochs,
