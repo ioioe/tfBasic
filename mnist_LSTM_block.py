@@ -10,6 +10,37 @@ from keras.initializations import normal, identity
 from keras.optimizers import RMSprop, Adam
 from keras.utils import np_utils
 from setGPU import set_gpu_memory_keras
+import numpy as np
+
+
+def block_reshape(x, block_h, block_w):
+    n = x.shape[0]
+    h = x.shape[1]
+    w = x.shape[2]
+    x_reshaped = np.array([])
+    for i in range(n):
+        print i, x_reshaped.shape
+        sub_x = np.empty((0, block_h*block_w))
+        for j in range(h / block_h):
+            if j % 2 == 0:
+                # left to right
+                for k in range(w / block_w):
+                    sub_x = np.concatenate((sub_x,
+                                            x[i, j*block_h: (j+1)*block_h, k*block_w: (k+1)*block_w].reshape(1, block_h*block_w)),
+                                           axis=0)
+            else:
+                # right to left
+                for k in reversed(range(w / block_w)):
+                    sub_x = np.concatenate((sub_x,
+                                            x[i, j*block_h: (j+1)*block_h, k*block_w: (k+1)*block_w].reshape(1, block_h*block_w)),
+                                           axis=0)
+        sub_x = sub_x.reshape(1, -1, block_h*block_w)
+        if i == 0:
+            x_reshaped = sub_x
+        else:
+            x_reshaped = np.concatenate((x_reshaped, sub_x), axis=0)
+    return x_reshaped
+
 
 set_gpu_memory_keras(0.4)
 
@@ -29,6 +60,9 @@ learning_rate = 1e-3
 
 X_train = X_train.reshape(X_train.shape[0], n_steps, n_input)
 X_test = X_test.reshape(X_test.shape[0], n_steps, n_input)
+print X_train.shape
+X_train = block_reshape(X_train, n_block_h, n_block_w)
+X_test = block_reshape(X_test, n_block_h, n_block_w)
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
 X_train /= 255
@@ -44,8 +78,7 @@ Y_test = np_utils.to_categorical(y_test, nb_classes)
 print('Evaluate row-based LSTM...')
 model = Sequential()
 
-model.add(Bidirectional(LSTM(output_dim=hidden_units, activation='tanh'),
-                        input_shape=(n_steps, n_input)))
+model.add(LSTM(output_dim=hidden_units, activation='tanh', input_shape=(n_steps, n_input)))
 
 model.add(Dense(nb_classes))
 model.add(Activation('softmax'))

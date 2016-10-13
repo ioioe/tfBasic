@@ -42,8 +42,7 @@ Y_test = np_utils.to_categorical(y_test, nb_classes)
 print('Evaluate row-based LSTM...')
 model = Sequential()
 
-model.add(Bidirectional(LSTM(output_dim=hidden_units, activation='tanh'),
-                        input_shape=(n_steps, n_input)))
+model.add(LSTM(output_dim=hidden_units, activation='tanh', input_shape=(n_steps, n_input)))
 
 model.add(Dense(nb_classes))
 model.add(Activation('softmax'))

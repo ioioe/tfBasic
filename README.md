@@ -19,6 +19,10 @@ Bidirectional version:
 
 0.9851 accuracy after 15 epochs
 
+Block-based version (4*7 block):
+
+0.9738 accuracy after 21 epochs
+
 #### Hierarchical LSTM 
 
 ```
